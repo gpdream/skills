@@ -9,9 +9,12 @@ description: Import eBird checklists into 中国观鸟记录中心 with cached t
 
 ## 执行路径与提速
 
-- 将全国目标鸟种库一次下载、建索引。随包的 [assets/birdreport-taxonomy.json](assets/birdreport-taxonomy.json) 含官方旧下载库 1508 条，只用于离线名称候选；旧库“序号”不是当前写入 ID。不要每只鸟重新下载名录或搜索网页。
-- 对本次清单的去重 species code 一次获取 eBird 学名、分类类别和名录版本，保留来源证据。使用学名精确匹配及按源/目标版本保存的已核验映射缓存。浙江只帮助判断分类拆分的分布范围，不能当作映射主键或自动定种依据。
-- 使用 [scripts/match_birds.py](scripts/match_birds.py) 整批匹配，输入与缓存规范见 [references/mapping-workflow.md](references/mapping-workflow.md)。只补查 `needs_review` 和 `unresolved`；新核验结果写入本地缓存，后续清单复用。目标名录版本变化时重查当前 ID。
+- **先跑本地匹配，再决定是否搜索。** 获取清单后运行 [scripts/match_birds.py](scripts/match_birds.py)，读取输出的 `summary`、`lookup_queue` 和 `target_id_lookup`；不要先按每只鸟打开搜索引擎。脚本默认读写持久缓存，精确匹配会自动保存，不需要额外传 `--cache`。
+- 只处理 `lookup_queue`，队列为空立即结束鸟种映射阶段。`matched` 不再搜索；`unresolved` 中的未定类群直接保留；`deferred` 是已经查过仍无结论的条目，在没有新证据时不重查。详情及批量补录见 [references/mapping-workflow.md](references/mapping-workflow.md)。
+- 将随包的 [assets/birdreport-taxonomy.json](assets/birdreport-taxonomy.json) 交给脚本读取，不把 1508 条旧下载库全部装入模型上下文。旧库“序号”不是当前写入 ID。来源分类数据优先用已有官方 CSV 通过 `--source-taxonomy` 一次关联所有 code，不按鸟种逐页查询。
+- 初次缺来源数据时，优先获取一次官方整表或清单已有学名；只补队列中的缺项。只有拆分、合并或官方数据缺漏才定向搜索。每个唯一 code 最多两次不同的定向查询；仍无结论就用 `remember` 记录依据和原因。遇 403/验证码按浏览器规则停止，不换中文、英文、学名反复碰同一个问题。
+- 每批任务至多检查一次当前目标鸟库，后续复用。目标版本或编号变化时用已确认学名重新关联当前 ID，不因此重新搜索 eBird 身份。`target_id_lookup` 只用于目标站编号核对，`ready_for_write=false` 不代表需要重做全部鸟种映射。
+- 来源版本明确改变时重核本次涉及的 code；版本缺失不再使整份缓存失效，默认在核验后 90 天内按 code 与来源名称/学名复用。未解决查询默认保留 30 天；原备注、地点或分类证据变化会触发重查。缓存命中不会续期，`--refresh` 仅在用户要求重新核验或确有分类变化时使用。
 - 候选映射、已成功保存的目标行、已核验的分类对应是三种不同证据。历史映射只能产生候选，不能凭一条旧 `mapping_basis` 自动提升成确认结果。
 - 用户要求 HTTP 或本机 Chrome 时，参照 [references/http-import.md](references/http-import.md)。优先使用已登录页面自带的 API 客户端携带会话；不导出令牌。先确认只读查询及真实请求字段，再采用批量接口。遇到 403、登录或验证码停止该路径，不能改另一种客户端绕过限制。
 - 只有当前独立浏览器通道允许网站客户端调用时才走 HTTP；不能用只允许读取页面的 `browser_evaluate` 发网络请求。工具未连接或 Chrome 设置未开启时记录原因，转用已验证的 UI 路径；不把尚未验证的接口写入包装成可直接运行的导入器。
@@ -31,7 +34,7 @@ description: Import eBird checklists into 中国观鸟记录中心 with cached t
 
 ## 2. 核对鸟名与分类范围
 
-- 一次读取目标站当前鸟种名录，保存版本、获取日期及真实 `taxon_id`。先用 eBird species code 确认来源学名、类别和分类版本，再比对学名、英文名、中文异名及拆分/合并范围。
+- 复用本批已读取的目标名录、映射计划和缓存，不再次下载或全量核验。仅对 `lookup_queue` 补充来源学名、类别、版本与证据；仅对 `target_id_lookup` 查当前真实 `taxon_id`。将已确认异名和无结论的查询通过 `remember` 批量写回，然后重新运行本地匹配。
 - 简繁转换仅用于搜索。记录 `target_name`、目标学名、目标鸟种编号和 `mapping_basis`。
 - 分类拆分无法精确对应时，结合日期、地区和原记录说明形成待核验候选；来源分类范围仍不明确时保留不确定性。证据足够支持推导后写明依据和限制，不冒称学名完全对应，不将地域推导存入全地区通用的确认缓存。
 - 针对 `sp.`、斜杠类群、杂交和未定种，保留不确定性。目标不支持等价分类时，在总笔记保留原名称、数量及备注，不任选一个确定种。
@@ -59,7 +62,7 @@ description: Import eBird checklists into 中国观鸟记录中心 with cached t
 
 1. 先完成一个鸟种的保存和回读，确认流程有效，再分小批次继续。
 2. 获取当前搜索框、数量框和备注框 refs。每种显式填写数量，并清空或填入该种备注；保存后备注可能残留。
-3. 填写目标中文名后按 `ArrowDown` 展开候选。仅填文字可能不会出现候选列表。
+3. 已有当前目标编号时直接输入编号，按 `ArrowDown`，核对唯一候选的名称后选择；不先搜中文再改编号。仅缺编号时填写精确目标中文名。仅填文字可能不会出现候选列表。
 4. 从当前快照读取完整候选的编号与名称。出现多个候选时，按 `Escape` 关闭列表，改填精确鸟种编号，再按 `ArrowDown`，确认只剩唯一候选后点击。
 5. 不依赖“点击第二个相近名称”正确选种。实测搜索“凤头鹰”后点击第二项仍可能保存为凤头鹰雕；以编号 `4523` 筛为唯一候选后才正确保存。
 6. 点击后读取 `.layui-table-main tbody tr` 的 `taxon_id`、`taxon_name` 及 `taxon_count`。编辑页数量在该单元格的 `input.value` 中，表格文本可能显示为空。

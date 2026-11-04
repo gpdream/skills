@@ -118,6 +118,7 @@
     "name": "白頰山雀",
     "code": "cintit13",
     "count": 1,
+    "relation": "geographic_inference",
     "target_name": "大山雀",
     "target_scientific_name": "Parus minor",
     "mapping_basis": "eBird Asian Tit (Parus cinereus) is a lump; Zhejiang locality supports Japanese group, mapped to target Parus minor. Geographic inference, not an exact scientific-name match."
