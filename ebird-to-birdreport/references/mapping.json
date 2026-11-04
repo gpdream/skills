@@ -1,0 +1,269 @@
+[
+  {
+    "name": "白額雁",
+    "code": "gwfgoo",
+    "count": 50,
+    "comment": "先后遇到两群，第一群25只，第二群没数。",
+    "target_name": "白额雁",
+    "target_scientific_name": "Anser albifrons",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "金背鳩",
+    "code": "ortdov",
+    "count": 1,
+    "target_name": "山斑鸠",
+    "target_scientific_name": "Streptopelia orientalis",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "珠頸斑鳩",
+    "code": "spodov",
+    "count": 1,
+    "target_name": "珠颈斑鸠",
+    "target_scientific_name": "Spilopelia chinensis",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "小杜鵑",
+    "code": "lescuc1",
+    "count": 1,
+    "comment": "还得是跟着云兮鸟运好，一遇到云兮，小杜鹃就自己跳到很暴露的树枝上了。",
+    "target_name": "小杜鹃",
+    "target_scientific_name": "Cuculus poliocephalus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "山鷸",
+    "code": "eurwoo",
+    "count": 1,
+    "target_name": "丘鹬",
+    "target_scientific_name": "Scolopax rusticola",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "黑尾鷗",
+    "code": "bktgul",
+    "count": 1,
+    "target_name": "黑尾鸥",
+    "target_scientific_name": "Larus crassirostris",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "鸕鷀",
+    "code": "grecor",
+    "count": 1,
+    "target_name": "普通鸬鹚",
+    "target_scientific_name": "Phalacrocorax carbo",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "鳳頭蒼鷹",
+    "code": "cregos1",
+    "count": 1,
+    "target_name": "凤头鹰",
+    "target_scientific_name": "Accipiter trivirgatus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "東方角鴞",
+    "code": "orsowl",
+    "count": 1,
+    "target_name": "红角鸮",
+    "target_scientific_name": "Otus sunia",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "赤翡翠",
+    "code": "rudkin1",
+    "count": 1,
+    "comment": "批发赤翡翠，准备开车走的时候，赤翡翠跳到非常暴露的树枝上。",
+    "target_name": "赤翡翠",
+    "target_scientific_name": "Halcyon coromanda",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "紅隼",
+    "code": "eurkes",
+    "count": 1,
+    "target_name": "红隼",
+    "target_scientific_name": "Falco tinnunculus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "灰山椒鳥",
+    "code": "ashmin1",
+    "count": 1,
+    "target_name": "灰山椒鸟",
+    "target_scientific_name": "Pericrocotus divaricatus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "大卷尾",
+    "code": "bladro1",
+    "count": 6,
+    "target_name": "黑卷尾",
+    "target_scientific_name": "Dicrurus macrocercus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "棕背伯勞",
+    "code": "lotshr1",
+    "count": 1,
+    "target_name": "棕背伯劳",
+    "target_scientific_name": "Lanius schach",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "白頰山雀",
+    "code": "cintit13",
+    "count": 1,
+    "target_name": "大山雀",
+    "target_scientific_name": "Parus minor",
+    "mapping_basis": "eBird Asian Tit (Parus cinereus) is a lump; Zhejiang locality supports Japanese group, mapped to target Parus minor. Geographic inference, not an exact scientific-name match."
+  },
+  {
+    "name": "家燕",
+    "code": "barswa",
+    "count": 10,
+    "target_name": "家燕",
+    "target_scientific_name": "Hirundo rustica",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "東方金腰燕",
+    "code": "y00621",
+    "count": 10,
+    "target_name": "金腰燕",
+    "target_scientific_name": "Cecropis daurica",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "白頭翁",
+    "code": "livbul1",
+    "count": 5,
+    "target_name": "白头鹎",
+    "target_scientific_name": "Pycnonotus sinensis",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "黃眉柳鶯",
+    "code": "yebwar3",
+    "count": 2,
+    "target_name": "黄眉柳莺",
+    "target_scientific_name": "Phylloscopus inornatus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "褐色柳鶯",
+    "code": "duswar",
+    "count": 1,
+    "target_name": "褐柳莺",
+    "target_scientific_name": "Phylloscopus fuscatus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "淡腳柳鶯",
+    "code": "pllwar1",
+    "count": 2,
+    "target_name": "淡脚柳莺",
+    "target_scientific_name": "Phylloscopus tenellipes",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "極北柳鶯",
+    "code": "arcwar1",
+    "count": 5,
+    "target_name": "极北柳莺",
+    "target_scientific_name": "Phylloscopus borealis",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "紅頭山雀",
+    "code": "blttit2",
+    "count": 2,
+    "target_name": "红头长尾山雀",
+    "target_scientific_name": "Aegithalos concinnus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "Greater Necklaced Laughingthrush",
+    "code": "gnlthr",
+    "count": 1,
+    "target_name": "黑领噪鹛",
+    "target_scientific_name": "Pterorhinus pectoralis",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "八哥(冠八哥)",
+    "code": "cremyn",
+    "count": 5,
+    "target_name": "八哥",
+    "target_scientific_name": "Acridotheres cristatellus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "白氏地鶇",
+    "code": "scathr2",
+    "count": 5,
+    "target_name": "虎斑地鸫",
+    "target_scientific_name": "Zoothera aurea",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "白眉地鶇",
+    "code": "sibthr1",
+    "count": 1,
+    "target_name": "白眉地鸫",
+    "target_scientific_name": "Geokichla sibirica",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "中國黑鶇",
+    "code": "chibla1",
+    "count": 1,
+    "target_name": "乌鸫",
+    "target_scientific_name": "Turdus mandarinus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "灰背鶇",
+    "code": "gybthr1",
+    "count": 2,
+    "target_name": "灰背鸫",
+    "target_scientific_name": "Turdus hortulorum",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "白腹鶇",
+    "code": "palthr1",
+    "count": 1,
+    "target_name": "白腹鸫",
+    "target_scientific_name": "Turdus pallidus",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "寬嘴鶲",
+    "code": "asbfly",
+    "count": 5,
+    "target_name": "北灰鹟",
+    "target_scientific_name": "Muscicapa dauurica",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "白腹琉璃",
+    "code": "bawfly2",
+    "count": 5,
+    "target_name": "白腹蓝鹟",
+    "target_scientific_name": "Cyanoptila cyanomelana",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  },
+  {
+    "name": "黃眉黃鶲",
+    "code": "narfly2",
+    "count": 1,
+    "target_name": "黄眉姬鹟",
+    "target_scientific_name": "Ficedula narcissina",
+    "mapping_basis": "Species-code identity/common-name synonym checked against target official taxonomy."
+  }
+]
