@@ -13,21 +13,26 @@ python3 scripts/match_birds.py match /absolute/path/source.json \
 
 默认缓存为 `${XDG_CACHE_HOME:-~/.cache}/ebird-to-birdreport/crosswalk.json`，跨清单及会话复用。`--cache /path/crosswalk.json` 可指定位置；`--no-cache` 禁用持久读写。运行时缓存保存在技能目录外，不打进共享压缩包或提交 GitHub。
 
-读取输出的三个小字段即可决定下一步，不必把全量名录或脚本源码装进上下文：
+命令直接输出一份紧凑 JSON，可在同一次工具调用中决定下一步；完整逐行计划保存在 `--output`。不再额外打开全量计划、名录或脚本源码：
 
 | 字段 | 下一步 |
 |---|---|
 | `summary` | 检查行数、个体数、缓存命中数和待查唯一项数 |
 | `lookup_queue` | 仅补查这里的 code；空数组就结束映射搜索 |
 | `target_id_lookup` | 映射已知但缺当前编号，去目标站核对编号，不重搜来源身份 |
+| `note_only_indices` | 未定类群，保留原记录到笔记；不阻塞其他确定种 |
+| `count_review` / `merge_review` | 非整数计数或多行映射到同一目标；仅人工处理这些行 |
+| `blocked_indices` | 尚不能结构化写入的确定种行号，包括 deferred |
 
 `row_indices` 为原清单 observations 的零基下标。同一 code 的重复行合为一个查找任务，保留全部原始数量及备注。
+
+完整计划中的 `write_queue` 提供每行当前编号、目标名、学名、数量与原备注，供选定写入路径直接使用。同一目标有多条源行时先从该队列排除，列入 `merge_review`，避免未经确认自动累加或覆盖。每个候选仍需按所选通道核验。
 
 ## 2. 首次补来源身份，用一张表关联
 
 `source.json` 至少有 `source_id`、`observations`，每行保留 `name`、`code`、`count`、`comment`、`uncertain` 等原始字段。已有来源学名时同时保留 `scientific_name`、`category`、`identity_evidence`。只有确实查到版本才设置 `source_taxonomy_version`。
 
-缺少身份信息时先用已下载的官方 eBird CSV，一次关联全部 code：
+先检查清单页面是否已经提供学名，读取清单时一并提取。只有缺少身份信息时才用已下载的官方 eBird CSV，一次关联全部 code：
 
 ```bash
 python3 scripts/match_birds.py match /absolute/path/source.json \
@@ -108,10 +113,45 @@ python3 scripts/match_birds.py remember /absolute/path/source.json \
 - `unresolved`：未定类群或无候选。只处理 `lookup_required=true` 的确定种。
 - `deferred`：近期已查仍无结论，保留原因及原记录。
 - `ready_for_write`：全部行具有当前 ID、确定映射及非负整数数量；不是入库成功信号。
+- `ready_for_structured_write`：所有确定种已具备写入条件，其他行仅为需要进笔记的未定类群；允许继续录入确定种。它不代表笔记已保存或整份导入已完成。
 
 数字合计不包含 `X`、空值或未计数，单列 `unknown_count_rows`。同一目标种对应多个源行时先核实合并数量，保留各行备注。缺少目标 ID、非数值数量或未定类群，都不应触发全部映射重搜。
 
 历史 `cintit13` 按浙江推导到大山雀，候选中显式标为 `geographic_inference`；不得因学名恰好匹配就自动确认。只有新的来源范围证据能支持相等关系时，才显式更新来源 `relation`，不能以保存成功代替分类核验。
+
+## 6. 已有报告一次对账，只处理差异
+
+恢复导入前、每批次中断后及最终上传后，读取真实报告全部明细并保存为快照；使用原导入映射对账：
+
+```bash
+python3 scripts/match_birds.py audit /absolute/path/source.json \
+  --mapping /absolute/path/mapping-plan.json \
+  --saved-report /absolute/path/target-saved.json \
+  --output /absolute/path/audit.json
+```
+
+也接受旧导入时的 `mapping.json` 数组，每行含原 `code/name/count/comment` 与 `target_name/target_scientific_name`。只用于检查对应报告是否与当次映射一致，不把旧候选升级为新的分类证据。
+
+目标快照格式如下；`rows` 必须覆盖所有分页。编辑页数量读取 `input.value`，能确认为非负整数时保存为 JSON 数字，不能把空控件改成 0：
+
+```json
+{
+  "source_id": "实际来源清单 ID",
+  "activity_id": "实际报告 ID",
+  "point_id": "实际定点 ID",
+  "rows": [
+    {"id": "当前鸟种 ID", "name": "目标名称", "scientific_name": "目标学名", "count": 1}
+  ]
+}
+```
+
+- 标准输出含对账统计、缺项、冲突和意外行号，直接驱动下一步。
+- `structured_rows_consistent=true` 时，无需再搜索或写入已匹配的明细；继续检查笔记、原备注、完整性及有效观察时间。不能仅凭这个字段称为上传成功。
+- `missing_rows` 是差异清单，不是自动重放载荷。续录前确认原映射仍适用及当前目标编号；`conflicts` 和意外行先人工核对，不删除其他已有数据。
+- 原计划含 `taxon_id` 时精确比较编号；旧映射未保存编号时只能验证已保存编号非空，以及名称、学名和数量一致，不能据此宣称旧编号已核对。
+- `note_review` 在完整输出中保留未定类群原文、数量和备注。脚本不自动判断简繁转换后的笔记等价性，也不检查地点、努力量或最终提交状态。
+- 源数量或备注相对原映射变化会阻止一致判定。分类证据或版本变化时重新核验映射，不能依赖旧报告证明分类对应。
+- 本地旧快照只能证明当时保存的内容；在线验证必须先重新回读。每次脚本运行均不联网、不创建报告、不写网站。
 
 ## 更新旧下载库
 

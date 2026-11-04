@@ -341,6 +341,29 @@ def prepare(args):
             }
     counts = Counter(row["status"] for row in results)
     known = [number(row.get("count")) for row in source["observations"]]
+    note_only = [i for i, row in enumerate(results) if is_uncertain(row["source"])]
+    count_review = [
+        i for i, row in enumerate(results)
+        if i not in note_only and number(row["source"].get("count")) is None
+    ]
+    target_rows = defaultdict(list)
+    for i, row in enumerate(results):
+        if row["status"] == "matched":
+            target_rows[normalize(row["target"]["scientific_name"])].append(i)
+    merge_review = [indices for indices in target_rows.values() if len(indices) > 1]
+    duplicate_indices = {i for indices in merge_review for i in indices}
+    write_queue = [
+        {
+            "row_index": i, **row["target"],
+            "count": row["source"]["count"], "comment": row["source"].get("comment", ""),
+        }
+        for i, row in enumerate(results)
+        if row["write_ready"] and i not in duplicate_indices
+    ]
+    blocked = [
+        i for i, row in enumerate(results)
+        if i not in note_only and (not row["write_ready"] or i in duplicate_indices)
+    ]
     output = {
         "source_id": source.get("source_id"),
         "source_taxonomy_version": source.get("source_taxonomy_version"),
@@ -353,18 +376,137 @@ def prepare(args):
             "unknown_count_rows": sum(value is None for value in known),
             "cache_hits": sum(row.get("match_method") == "confirmed_cache" and row["status"] == "matched" for row in results),
             "unique_lookups": len(lookup_queue),
+            "write_rows": len(write_queue),
+            "note_only_rows": len(note_only),
             **{status: counts[status] for status in ("matched", "needs_review", "unresolved", "deferred")},
         },
         "lookup_queue": list(lookup_queue.values()),
         "target_id_lookup": list(id_queue.values()),
-        "ready_for_write": bool(results) and all(row.get("write_ready") for row in results),
+        "count_review": count_review,
+        "merge_review": merge_review,
+        "note_only_indices": note_only,
+        "blocked_indices": blocked,
+        "write_queue": write_queue,
+        "ready_for_structured_write": bool(write_queue) and not blocked,
+        "ready_for_write": bool(results) and not merge_review and all(row.get("write_ready") for row in results),
         "rows": results,
     }
     write(args.output, output)
     if cache_changed and not args.no_cache:
         save_cache(args.cache, cache)
-    print(json.dumps(output["summary"], ensure_ascii=False))
-    print(f"ready_for_write={output['ready_for_write']} (no network or report writes performed)")
+    # Return the next decisions in the same call; the full per-row plan stays on disk.
+    print(json.dumps({
+        key: output[key] for key in (
+            "summary", "lookup_queue", "target_id_lookup", "count_review",
+            "merge_review", "note_only_indices", "blocked_indices",
+            "ready_for_structured_write", "ready_for_write",
+        )
+    }, ensure_ascii=False))
+
+
+def audit(args):
+    """Compare an existing report snapshot, without confirming taxonomy or writing."""
+    source, mapping, saved = load(args.source), load(args.mapping), load(args.saved_report)
+    if not source.get("source_id") or saved.get("source_id") != source["source_id"]:
+        raise ValueError("Saved report must carry the same source_id")
+    if not saved.get("activity_id") or not saved.get("point_id"):
+        raise ValueError("Saved report needs activity_id and point_id")
+    # Accept both the historical import mapping and a current match plan.
+    if isinstance(mapping, dict):
+        if mapping.get("source_id") != source["source_id"]:
+            raise ValueError("Mapping plan must carry the same source_id")
+        mapping = [
+            {
+                **row["source"],
+                "target_name": row["target"]["name"],
+                "target_scientific_name": row["target"]["scientific_name"],
+                "target_taxon_id": row["target"].get("taxon_id"),
+            }
+            for row in mapping["rows"] if row["status"] == "matched"
+        ]
+    by_source, by_target = defaultdict(list), defaultdict(list)
+    for row in mapping:
+        by_source[source_key(row)].append(row)
+    for i, row in enumerate(saved["rows"]):
+        by_target[normalize(row.get("scientific_name"))].append((i, row))
+    expected = defaultdict(list)
+    missing, conflicts, unplanned, notes, matched = [], [], [], [], []
+    for i, row in enumerate(source["observations"]):
+        if is_uncertain(row):
+            notes.append({"row_index": i, **row})
+            continue
+        candidates = by_source.get(source_key(row), [])
+        if len(candidates) != 1:
+            unplanned.append(i)
+            continue
+        old = candidates[0]
+        if any(row.get(key, "") != old.get(key, "") for key in ("count", "comment")):
+            conflicts.append({"row_index": i, "reason": "Source count/comment changed since mapping"})
+            continue
+        name = normalize(old.get("target_scientific_name"))
+        if not name or not old.get("target_name") or number(row.get("count")) is None:
+            unplanned.append(i)
+            continue
+        expected[name].append((i, row, old))
+    used = set()
+    for scientific, entries in expected.items():
+        actual = by_target.get(scientific, [])
+        if len(entries) != 1 or len(actual) > 1:
+            conflicts.append({
+                "row_indices": [i for i, _, _ in entries],
+                "reason": "Duplicate source target or duplicate saved rows; review merge",
+            })
+            continue
+        i, observation, old = entries[0]
+        if not actual:
+            missing.append({
+                "row_index": i, "name": old["target_name"],
+                "scientific_name": old["target_scientific_name"], "count": observation["count"],
+            })
+            continue
+        saved_index, actual_row = actual[0]
+        used.add(saved_index)
+        different = []
+        if normalize(actual_row.get("name")) != normalize(old["target_name"]):
+            different.append("name")
+        if number(actual_row.get("count")) != observation["count"]:
+            different.append("count")
+        target_id = actual_row.get("taxon_id", actual_row.get("id"))
+        if not target_id or (
+            old.get("target_taxon_id") and str(target_id) != str(old["target_taxon_id"])
+        ):
+            different.append("taxon_id")
+        if different:
+            conflicts.append({"row_index": i, "fields": different, "saved_row_index": saved_index})
+        else:
+            matched.append(i)
+    unexpected = [i for i in range(len(saved["rows"])) if i not in used]
+    output = {
+        "source_id": source["source_id"],
+        "activity_id": saved["activity_id"], "point_id": saved["point_id"],
+        "evidence": str(Path(args.saved_report).resolve()),
+        "summary": {
+            "source_rows": len(source["observations"]),
+            "saved_rows": len(saved["rows"]), "matched_rows": len(matched),
+            "missing_rows": len(missing), "conflicts": len(conflicts),
+            "unexpected_rows": len(unexpected), "unplanned_rows": len(unplanned),
+            "note_review_rows": len(notes),
+        },
+        "structured_rows_consistent": bool(matched) and not (
+            missing or conflicts or unexpected or unplanned
+        ),
+        "matched_indices": matched, "missing_rows": missing, "conflicts": conflicts,
+        "unexpected_saved_indices": unexpected, "unplanned_indices": unplanned,
+        "note_review": notes,
+        "scope": "Snapshot row comparison only; verify current page, notes and report options separately. No taxonomy confirmation or writes.",
+    }
+    write(args.output, output)
+    print(json.dumps({
+        key: output[key] for key in (
+            "summary", "structured_rows_consistent", "missing_rows",
+            "conflicts", "unexpected_saved_indices", "unplanned_indices", "scope",
+        )
+    }, ensure_ascii=False))
 
 
 def remember(args):
@@ -426,6 +568,12 @@ def main():
     record = sub.add_parser("remember", help="Persist a batch of evidence-backed mapping decisions")
     record.add_argument("--decisions", required=True)
     record.set_defaults(run=remember)
+    compare = sub.add_parser("audit", help="Reconcile saved report rows; never submit or confirm taxonomy")
+    compare.add_argument("source")
+    compare.add_argument("--mapping", required=True, help="Original import mapping or match plan")
+    compare.add_argument("--saved-report", required=True, help="Report snapshot with source_id and all rows")
+    compare.add_argument("--output", required=True)
+    compare.set_defaults(run=audit)
     for command in (match, record):
         command.add_argument("source")
         command.add_argument("--taxonomy", default=ROOT / "assets/birdreport-taxonomy.json")
