@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.env.*
+
+# Local credentials and browser profiles
+credentials.json
+web-sessions.json
+browser/
+
+# Generated synchronization artifacts
+bird-sync-runs/
+birdreport-snapshot.json
+birdreport-import-plan.json
+birdreport-write-receipt.json
+ebird-personal-selection.json
+ebird-checklist-*.html
+ebird-import-*.csv
+ledger.json
+manifest.json
+resume.json
+review.json
+review.md
+sync-summary.json
+reconciliation-*.json
+import-receipt-*.json
+
+# Distribution archives
+*.tar.gz

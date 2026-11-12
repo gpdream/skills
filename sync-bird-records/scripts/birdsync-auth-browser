@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+playwright_dir=""
+
+while IFS= read -r candidate; do
+  if [[ -f "$candidate/package.json" && -f "$(dirname "$candidate")/playwright-core/package.json" ]]; then
+    playwright_dir="$candidate"
+    break
+  fi
+done < <(find "${HOME}/.npm/_npx" -mindepth 3 -maxdepth 3 -type d -name playwright 2>/dev/null | sort -r)
+
+if [[ -z "$playwright_dir" ]]; then
+  npx --yes playwright@1.65.0 --version >/dev/null
+  while IFS= read -r candidate; do
+    if [[ -f "$candidate/package.json" && -f "$(dirname "$candidate")/playwright-core/package.json" ]]; then
+      playwright_dir="$candidate"
+      break
+    fi
+  done < <(find "${HOME}/.npm/_npx" -mindepth 3 -maxdepth 3 -type d -name playwright 2>/dev/null | sort -r)
+fi
+
+if [[ -z "$playwright_dir" ]]; then
+  echo "Unable to install the isolated browser runtime" >&2
+  exit 1
+fi
+
+export BIRDSYNC_PLAYWRIGHT_DIR="$playwright_dir"
+exec node "$script_dir/auth_browser.js" "$@"

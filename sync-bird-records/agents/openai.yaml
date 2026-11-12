@@ -1,0 +1,5 @@
+interface:
+  display_name: "Sync Bird Records"
+  short_description: "Guide login and safely migrate BirdReport and eBird records"
+  default_prompt: "Migrate my own bird records in either direction between BirdReport and eBird. Start with the direction-aware live preflight; silently continue when both personal sessions validate, and if one fails probe the protected browser profile before asking me to log in once. Never ask me for terminal work, intermediate files, or a password. Use only authenticated personal-history records, handle eBird anti-bot pages through the isolated browser, dry-run and reconcile exact source markers before writes, preserve private visibility, and never claim a remote upload without a remote ID plus read-back evidence."
+

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+skill_dir=$(CDPATH= cd -- "$script_dir/.." && pwd)
+cache_base=${XDG_CACHE_HOME:-${HOME}/.cache}
+runtime_dir=${BIRDSYNC_RUNTIME_DIR:-${cache_base}/sync-bird-records/runtime-v2}
+python_bin=${PYTHON_BIN:-python3}
+site_packages="$runtime_dir/site-packages"
+requirements_hash=$(sha256sum "$skill_dir/requirements.txt" | awk '{print $1}')
+marker="$runtime_dir/requirements.sha256"
+
+if [[ ! -f "$marker" ]] || [[ "$(tr -d '[:space:]' < "$marker")" != "$requirements_hash" ]]; then
+  mkdir -p "$site_packages"
+  "$python_bin" -m pip install --disable-pip-version-check -q --upgrade \
+    --target "$site_packages" -r "$skill_dir/requirements.txt"
+  printf '%s\n' "$requirements_hash" > "$marker"
+fi
+
+export PYTHONPATH="$site_packages${PYTHONPATH:+:$PYTHONPATH}"
+exec "$python_bin" "$script_dir/birdsync.py" "$@"
+
